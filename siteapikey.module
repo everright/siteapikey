@@ -1,0 +1,88 @@
+<?php
+
+/**
+ * @file
+ * File for the Site API Key module.
+ */
+
+/**
+ * Defalut value for Site API Key.
+ */
+define('SITEAPIKEY_DEFAULT', 'No API Key yet');
+
+/**
+ * Implements hook_menu().
+ */
+function siteapikey_menu() {
+  $items = array();
+
+  $items['page_json/%/%node'] = array(
+    'title' => 'Page node response',
+    'description' => 'Return json format data of a given page node',
+    'page callback' => 'siteapikey_page_json',
+    'page arguments' => array(2),
+    'access callback' => '_siteapikey_page_json_access',
+    'access arguments' => array(1, 2),
+  );
+
+  return $items;
+}
+
+/**
+ * Access callback: Checks page node access with correct Site API Key.
+ *
+ * @param string $siteapikey
+ *   The given site api key.
+ * @param object $node
+ *   The node to check.
+ *
+ * @return bool
+ *   TRUE if the operation may be performed, FALSE otherwise.
+ *
+ * @see siteapikey_menu()
+ */
+function _siteapikey_page_json_access($siteapikey, $node) {
+  return $node && 'article' == $node->type
+    && $siteapikey != SITEAPIKEY_DEFAULT
+    && $siteapikey == variable_get('siteapikey', SITEAPIKEY_DEFAULT);
+}
+
+/**
+ * Page callback for page json response.
+ */
+function siteapikey_page_json($node) {
+  drupal_json_output($node);
+  drupal_exit();
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for system_site_information_settings().
+ *
+ * Alters the site information settings form.
+ *
+ * @see system_site_information_settings()
+ */
+function siteapikey_form_system_site_information_settings_alter(&$form, &$from_state) {
+  $form['site_information']['siteapikey'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Site API Key'),
+    '#default_value' => variable_get('siteapikey', SITEAPIKEY_DEFAULT),
+    '#required' => TRUE,
+  );
+  // Change value of submit button.
+  $form['actions']['submit']['#value'] = t('Update Configuration');
+  // Add extra submit handle.
+  if (isset($form['#submit']) && !empty($form['#submit'])) {
+    array_unshift($form['#submit'], 'siteapikey_form_system_site_information_settings_submit');
+  }
+  else {
+    $form['#submit'] = array('siteapikey_form_system_site_information_settings_submit');
+  }
+}
+
+/**
+ * Submit handler for save Site API Key.
+ */
+function siteapikey_form_system_site_information_settings_submit($form, &$form_state) {
+  drupal_set_message(t('Site API Key has been saved with value [@siteapikey].', array('@siteapikey' => $form_state['values']['siteapikey'])));
+}

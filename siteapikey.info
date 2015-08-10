@@ -1,0 +1,5 @@
+name = Site API Key
+description = The module provides user to save the Site API Key and return json format of page node.
+package = Custom
+core = 7.x
+configure = admin/config/system/site-information
